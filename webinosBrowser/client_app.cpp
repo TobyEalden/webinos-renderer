@@ -48,29 +48,28 @@ void ClientApp::InjectWebinos(CefRefPtr<CefFrame> frame)
   CefRefPtr<CefCommandLine> commandLine = AppGetCommandLine();
 
   // First try and load the platform-supplied webinos.js
+  std::string pzpPath = AppGetWebinosWRTConfig(NULL,NULL);
+  CefString wrtPath;
+
+  // Make sure there is a trailing separator on the path.
+  if (pzpPath.length() > 0) 
+  {
+    if (pzpPath.find_last_of('/') == pzpPath.length()-1 || pzpPath.find_last_of('\\') == pzpPath.length()-1)
+      wrtPath = pzpPath + "wrt/webinos.js";
+    else
+      wrtPath = pzpPath + "/wrt/webinos.js";
+  }
+
 #if defined(OS_WIN)
-  base::FilePath workingDir(commandLine->GetProgram().ToWString().c_str());
-  base::FilePath webinosJSPath = workingDir.DirName().Append(L"..\\..\\webinos-pzp\\web_root\\webinos.js");
+  base::FilePath webinosJSPath(wrtPath.ToWString().c_str());
 #else
-  base::FilePath workingDir(commandLine->GetProgram());
-  base::FilePath webinosJSPath = workingDir.DirName().Append("..\\..\\webinos-pzp\\web_root\\webinos.js");
+  base::FilePath webinosJSPath(wrtPath);
 #endif
+
+  LOG(INFO) << "webinos.js path is " << wrtPath;
 
   int64 webinosJSCodeSize;
   bool gotJSFile = base::GetFileSize(webinosJSPath, &webinosJSCodeSize);
-  if (!gotJSFile)
-  {
-    // Unable to load the platform-supplied webinos.js, use the installed version.
-#if defined(OS_WIN)
-    workingDir = base::FilePath(commandLine->GetProgram().ToWString().c_str());
-    webinosJSPath = workingDir.DirName().Append(L"webinos.js");
-#else
-    workingDir = base::FilePath(commandLine->GetProgram());
-    webinosJSPath = workingDir.DirName().Append("webinos.js");
-#endif
-    gotJSFile = base::GetFileSize(webinosJSPath, &webinosJSCodeSize);
-  }
-
   if (gotJSFile)
   {
     char* webinosJSCode = new char[webinosJSCodeSize+1];
