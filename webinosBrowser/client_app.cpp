@@ -118,21 +118,14 @@ void ClientApp::OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFra
       N.B. this code is poor and needs tidying up
     **/
 
-    CefRefPtr<CefCommandLine> commandLine = AppGetCommandLine();
-#if defined(OS_WIN)
-    base::FilePath workingDir(commandLine->GetProgram().ToWString().c_str());
-    base::FilePath bootPath = workingDir.DirName().Append(L"webinosBoot.js");
-#else
-    base::FilePath workingDir(commandLine->GetProgram());
-    base::FilePath bootPath = workingDir.DirName().Append("webinosBoot.js");
-#endif
-
-    int64 bootDataSize;
-    if (base::GetFileSize(bootPath, &bootDataSize))
-    {
-      char* bootData = new char[bootDataSize+1];
-      base::ReadFile(bootPath, bootData, bootDataSize);
-      bootData[bootDataSize] = 0;
+    char* bootData = "(function () { "\
+"	try { "\
+"		// Widget interface is injected here."\
+"		%s"\
+"	} catch (e) { "\
+"		alert(\"webinos boot code exception: \" + e); "\
+"	} "\
+"}());";
 
       std::string widgetInterface;
 
@@ -186,7 +179,7 @@ void ClientApp::OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFra
     	  LOG(INFO) << "OnContextCreated => not a widget " << frame->GetURL();
       }
 
-      int bootstrapLen = bootDataSize + widgetInterface.length() + 100;
+    int bootstrapLen = strlen(bootData) + widgetInterface.length() + 100;
       char* bootstrap = new char[bootstrapLen];
       sprintf(bootstrap,bootData,widgetInterface.c_str());
       delete[] bootData;
@@ -195,11 +188,6 @@ void ClientApp::OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFra
       delete[] bootstrap;
 
       InjectWebinos(frame);
-    }
-    else
-    {
-    	LOG(ERROR) << "webinosBoot.js missing ";
-    }
 }
 
 void ClientApp::OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context) 
