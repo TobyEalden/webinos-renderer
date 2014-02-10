@@ -118,14 +118,14 @@ void ClientApp::OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFra
       N.B. this code is poor and needs tidying up
     **/
 
-    char* bootData = "(function () { "\
+    std::string bootData("(function () { "\
 "	try { "\
 "		// Widget interface is injected here."\
 "		%s"\
 "	} catch (e) { "\
 "		alert(\"webinos boot code exception: \" + e); "\
 "	} "\
-"}());";
+"}());");
 
       std::string widgetInterface;
 
@@ -179,10 +179,9 @@ void ClientApp::OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFra
     	  LOG(INFO) << "OnContextCreated => not a widget " << frame->GetURL();
       }
 
-    int bootstrapLen = strlen(bootData) + widgetInterface.length() + 100;
+    int bootstrapLen = bootData.length() + widgetInterface.length() + 100;
       char* bootstrap = new char[bootstrapLen];
-      sprintf(bootstrap,bootData,widgetInterface.c_str());
-      delete[] bootData;
+    sprintf(bootstrap,bootData.c_str(),widgetInterface.c_str());
       std::string url = frame->GetURL();
       frame->ExecuteJavaScript(bootstrap, url, 0);
       delete[] bootstrap;
